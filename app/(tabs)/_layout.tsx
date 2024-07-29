@@ -24,6 +24,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="leaderboard"
+        options={{
+          title: 'Bảng xếp hạng',
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon name={focused ? 'cellular' : 'cellular-outline'} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="explore"
         options={{
           title: 'Explore',
