@@ -2,11 +2,31 @@ import { StyleSheet, StatusBar, SafeAreaView } from "react-native";
 
 import { ThemedView } from "@/components/ThemedView";
 import Game from "@/components/game/game";
+import HomePage from "@/components/game/homepage";
+import { useState } from "react";
+import YouWinPage from "@/components/game/YouWinPage";
+import YouLosePage from "@/components/game/YouLosePage";
 
 export default function HomeScreen() {
+
+  const [isGame, setIsGame] = useState(false);
+  const [didWin, setDidWin] = useState<boolean | null>(null);
+
+  const handleGameEnd = (didWin: boolean) => {
+    setDidWin(didWin);
+  };
+
+  const handleResetGame = () => {
+    setDidWin(null);
+    setIsGame(false);
+  }
+
   return (
     <ThemedView style={styles.view}>
-      <Game/>
+      {!isGame && didWin === null && <HomePage onStartGame={() => setIsGame(true)} />}
+      {isGame && didWin === null && <Game onEndGame={handleGameEnd}/>}
+      {didWin === true && <YouWinPage onResetGame={handleResetGame}/>}
+      {didWin === false && <YouLosePage onResetGame={handleResetGame}/>}
     </ThemedView>
   );
 }

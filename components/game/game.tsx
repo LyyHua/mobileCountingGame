@@ -4,12 +4,11 @@ import { ThemedText } from "../ThemedText";
 import { ThemedView } from "../ThemedView";
 import { Button } from "react-native-paper";
 
-const BotMessage = ({ message }: { message: string }) => <Text>{message}</Text>;
-const PlayerMessage = ({ message }: { message: string }) => (
-  <Text>{message}</Text>
-);
-export default function Game() {
-  const [currentNumber, setCurrentNumber] = useState(0);
+const Message = ({ message }: { message: string }) => <ThemedText type="subtitle" >{message}</ThemedText>;
+
+export default function Game( {onEndGame} : {onEndGame: (didWin: boolean) => void}) {
+  
+  const [currentNumber, setCurrentNumber] = useState(95);
   const [isPlayerTurn, setIsPlayerTurn] = useState(true);
   const [isBotTurn, setIsBotTurn] = useState(false);
   const [buttonPressed, setButtonPressed] = useState(false);
@@ -19,60 +18,53 @@ export default function Game() {
     return number % 3 === 0 || number.toString().includes("3");
   };
 
+  const updateDisplayMessage = (message: string, nextNumber: number) => {
+
+    setCurrentNumber(nextNumber + 1);
+    setDisplayMessage(message);
+
+    setButtonPressed(true);
+    setIsPlayerTurn(false);
+    
+    setTimeout(() => {
+      setIsBotTurn(true);
+      setButtonPressed(false);
+      setDisplayMessage(null);
+      handleBotTurn(currentNumber + 1);
+    }, 700);
+
+  };
+
   const handlePlayerCount = () => {
     if (isClap(currentNumber + 1)) {
-      Alert.alert("Error", "You should have clapped!");
+      onEndGame(false);
     } else {
-      setCurrentNumber((prevNumber) => {
-        const newNumber = prevNumber + 1;
-        setDisplayMessage(newNumber.toString());
-        setButtonPressed(true);
-        setIsPlayerTurn(false);
-        setTimeout(() => {
-          setIsBotTurn(true);
-          setButtonPressed(false);
-          setDisplayMessage(null);
-          handleBotTurn(newNumber);
-        }, 800); // Bot's turn after 1 second
-        return newNumber;
-      });
+      updateDisplayMessage((currentNumber + 1).toString(), currentNumber);
     }
   };
 
   const handlePlayerClap = () => {
     if (isClap(currentNumber + 1)) {
-      setCurrentNumber((prevNumber) => {
-        const newNumber = prevNumber + 1;
-        setDisplayMessage("Bộp!");
-        setIsPlayerTurn(false);
-        setButtonPressed(true);
-        setTimeout(() => {
-          setIsBotTurn(true);
-          setButtonPressed(false);
-          setDisplayMessage(null);
-          handleBotTurn(newNumber);
-        }, 800); // Bot's turn after 1 second
-        return newNumber;
-      });
+      updateDisplayMessage("Bộp!", currentNumber);
     } else {
-      Alert.alert("Error", "You should have counted!");
+      onEndGame(false);
     }
   };
 
   const handleBotTurn = (newNumber: number) => {
-    if (newNumber >= 100) return; // End game if number reaches 100
+    if (newNumber >= 100) return onEndGame(true);
 
-    if (isClap(newNumber + 1)) {
-      setDisplayMessage("Bộp!");
-    } else {
-      setDisplayMessage((newNumber + 1).toString());
-    }
+    if (isClap(newNumber + 1)) setDisplayMessage("Bộp!");
+
+    else setDisplayMessage((newNumber + 1).toString());
+
     setTimeout(() => {
       setIsBotTurn(false);
       setDisplayMessage(null);
       setCurrentNumber(newNumber + 1);
       setIsPlayerTurn(true);
-    }, 800); // Show message for 1 second
+    }, 700); // Show message for 1 second
+
   };
 
   return (
@@ -81,7 +73,7 @@ export default function Game() {
         <ThemedText type="title" style={styles.bot}>
           Máy:
         </ThemedText>
-        {isBotTurn && displayMessage && <BotMessage message={displayMessage} />}
+        {isBotTurn && displayMessage && <Message message={displayMessage} />}
       </ThemedView>
       <ThemedView style={styles.playerContainer}>
         {isPlayerTurn && (
@@ -96,7 +88,7 @@ export default function Game() {
         )}
         <ThemedView style={styles.playerCountContainer}>
           {buttonPressed && displayMessage && (
-            <PlayerMessage message={displayMessage} />
+            <Message message={displayMessage} />
           )}
         </ThemedView>
         <ThemedText type="title" style={styles.player}>
