@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { StyleSheet } from "react-native";
 import { ThemedText } from "../ThemedText";
 import { ThemedView } from "../ThemedView";
@@ -12,61 +12,75 @@ const Message = ({ message }: { message: string }) => (
 );
 
 export default function Game({ onEndGame }: { onEndGame: (didWin: boolean) => void }) {
-  
   const [currentNumber, setCurrentNumber] = useState(0);
   const [isPlayerTurn, setIsPlayerTurn] = useState(true);
   const [isBotTurn, setIsBotTurn] = useState(false);
   const [buttonPressed, setButtonPressed] = useState(false);
   const [displayMessage, setDisplayMessage] = useState<string | null>(null);
 
-  const isClap = (number: number) => {
+  const isClap = useCallback((number: number) => {
     return number % 3 === 0 || number.toString().includes("3");
-  };
+  }, []);
 
-  const updateDisplayMessage = (message: string, nextNumber: number) => {
-    setCurrentNumber(nextNumber + 1);
-    setDisplayMessage(message);
+  const handleBotTurn = useCallback(
+    (newNumber: number) => {
+      if (newNumber >= 100) return onEndGame(true);
 
-    setButtonPressed(true);
-    setIsPlayerTurn(false);
+      if (isClap(newNumber + 1)) setDisplayMessage("Bộp!");
+      else setDisplayMessage((newNumber + 1).toString());
 
-    setTimeout(() => {
-      setIsBotTurn(true);
-      setButtonPressed(false);
-      setDisplayMessage(null);
-      handleBotTurn(currentNumber + 1);
-    }, 700);
-  };
+      setTimeout(() => {
+        setIsBotTurn(false);
+        setDisplayMessage(null);
+        setCurrentNumber(newNumber + 1);
+        setIsPlayerTurn(true);
+      }, 700);
+    },
+    [onEndGame]
+  );
 
-  const handlePlayerCount = () => {
+  const updateDisplayMessage = useCallback(
+    (message: string, nextNumber: number) => {
+      setCurrentNumber(nextNumber + 1);
+      setDisplayMessage(message);
+
+      setButtonPressed(true);
+      setIsPlayerTurn(false);
+
+      setTimeout(() => {
+        setIsBotTurn(true);
+        setButtonPressed(false);
+        setDisplayMessage(null);
+        handleBotTurn(currentNumber + 1);
+      }, 700);
+    },
+    [handleBotTurn]
+  );
+
+  const handlePlayerCount = useCallback(() => {
     if (isClap(currentNumber + 1)) {
       onEndGame(false);
     } else {
       updateDisplayMessage((currentNumber + 1).toString(), currentNumber);
     }
-  };
+  }, [currentNumber, onEndGame, updateDisplayMessage]);
 
-  const handlePlayerClap = () => {
+  const handlePlayerClap = useCallback(() => {
     if (isClap(currentNumber + 1)) {
       updateDisplayMessage("Bộp!", currentNumber);
     } else {
       onEndGame(false);
     }
-  };
+  }, [currentNumber, onEndGame, updateDisplayMessage]);
 
-  const handleBotTurn = (newNumber: number) => {
-    if (newNumber >= 100) return onEndGame(true);
-
-    if (isClap(newNumber + 1)) setDisplayMessage("Bộp!");
-    else setDisplayMessage((newNumber + 1).toString());
-
-    setTimeout(() => {
-      setIsBotTurn(false);
-      setDisplayMessage(null);
-      setCurrentNumber(newNumber + 1);
-      setIsPlayerTurn(true);
-    }, 700); // Show message for 1 second
-  };
+  useEffect(() => {
+    if (isPlayerTurn) {
+      const timer = setTimeout(() => {
+        onEndGame(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [isPlayerTurn, onEndGame]);
 
   return (
     <ThemedView style={styles.gameContainer}>
